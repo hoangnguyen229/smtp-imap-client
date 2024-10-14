@@ -5,9 +5,14 @@
 package hoangnguyen.dev.App;
 
 import hoangnguyen.dev.Protocol.ImapClient;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -18,7 +23,7 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     private DefaultListModel<String> listModel;
     private String imapHost;
     private int imapPort;
-    private String username;
+    private String userEmail;
     private String password;
     private List<Email> emails;
     /**
@@ -27,13 +32,14 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     public Frm_ListMailSend(){
         
     }
-    public Frm_ListMailSend(String imapHost, int imapPort, String username, String password) {
-        this.username = username;
+    public Frm_ListMailSend(String imapHost, int imapPort, String userEmail, String password) {
+        this.userEmail = userEmail;
         this.password = password;
         this.imapHost = imapHost;
         this.imapPort = imapPort;
         initComponents();
         setupImapClient();
+        btn_attachment.setEnabled(false);
     }
     
     private void setupImapClient(){
@@ -42,7 +48,7 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
         listMailSent.setModel(listModel);
         try{
             imapClient.connect(MailConfig.imapHost, MailConfig.TLS_PORT);
-            if(imapClient.login(username,password)){
+            if(imapClient.login(userEmail,password)){
                 List<String> folders = imapClient.listFolders();
                 for(String folder : folders){
                     System.out.println(folder);
@@ -74,6 +80,15 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
         txt_recipient.setText(email.getRecipient());
         txt_message.setText(email.getBody());
 //        txt_attachment.setText(email.isHasAttachment() ? "Có tệp đính kèm" : "Không có tệp đính kèm");
+        if(email.isHasAttachment()){
+            txt_attachmentFile.setText(email.getAttachmentName());
+            btn_attachment.setEnabled(true);
+        }
+        else{
+            txt_attachmentFile.setText("No attachment");
+            btn_attachment.setEnabled(false);
+                    
+        }
     }
 
     /**
@@ -85,6 +100,7 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jSeparator1 = new javax.swing.JSeparator();
         jPanel2 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -99,6 +115,9 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
         lb_subject = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         txt_recipient = new javax.swing.JTextField();
+        txt_attachmentFile = new javax.swing.JTextField();
+        btn_attachment = new javax.swing.JButton();
+        jLabel5 = new javax.swing.JLabel();
         txt_search = new javax.swing.JTextField();
         jMenuBar1 = new javax.swing.JMenuBar();
         btn_home = new javax.swing.JMenu();
@@ -140,7 +159,8 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 388, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(16, Short.MAX_VALUE))
         );
 
         jPanel3.setBackground(new java.awt.Color(255, 255, 255));
@@ -158,38 +178,54 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
 
         jLabel4.setText("Recipient:");
 
+        txt_attachmentFile.setText("No attachment");
+
+        btn_attachment.setText("Save As");
+        btn_attachment.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_attachmentActionPerformed(evt);
+            }
+        });
+
+        jLabel5.setText("Attached file:");
+
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lb_subject, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE)
-                        .addContainerGap())
-                    .addComponent(lb_subject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel3Layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(txt_senderName, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                                 .addComponent(jLabel3)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txt_sentDate, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(txt_sentDate, javax.swing.GroupLayout.PREFERRED_SIZE, 416, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(txt_senderName))
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(jLabel5)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txt_attachmentFile)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btn_attachment))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                                 .addComponent(jLabel4)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txt_recipient, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(203, 203, 203))))
+                                .addComponent(txt_recipient, javax.swing.GroupLayout.PREFERRED_SIZE, 416, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap())))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGap(32, 32, 32)
+                .addContainerGap()
+                .addComponent(lb_subject)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(txt_senderName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -197,15 +233,18 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txt_recipient, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
-                .addGap(17, 17, 17)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
                     .addComponent(txt_sentDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(lb_subject)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(61, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txt_attachmentFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_attachment)
+                    .addComponent(jLabel5))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         btn_home.setText("Home");
@@ -262,7 +301,7 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_homeActionPerformed
 
     private void jmenu_exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmenu_exitActionPerformed
-        Frm_Home frm_Home = new Frm_Home();
+        Frm_Home frm_Home = new Frm_Home(userEmail,password);
         frm_Home.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jmenu_exitActionPerformed
@@ -276,6 +315,40 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_listMailSentValueChanged
 
+    private void btn_attachmentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_attachmentActionPerformed
+        int selectedIndex = listMailSent.getSelectedIndex();
+        if(selectedIndex != -1){
+            Email email = emails.get(selectedIndex);
+            if(email.isHasAttachment()){
+                try{
+                    byte[] attachmentData = imapClient.downloadAttachment(email.getId(), email.getAttachmentName());
+                    saveAndOpenAttachment(attachmentData, email.getAttachmentName());
+                }
+                catch(IOException ex){
+                    JOptionPane.showMessageDialog(this, "Error downloading attachment: " + ex.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }//GEN-LAST:event_btn_attachmentActionPerformed
+    
+    private void saveAndOpenAttachment(byte[] attachmentData, String fileName) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Attachment");
+        fileChooser.setSelectedFile(new File(fileName)); // Đặt tên file mặc định
+
+        // Hiển thị hộp thoại lưu file
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
+                fos.write(attachmentData);
+                // Mở file sau khi lưu
+                Desktop.getDesktop().open(fileToSave);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error saving or opening attachment: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
     /**
      * @param args the command line arguments
      */
@@ -343,19 +416,23 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btn_attachment;
     private javax.swing.JMenu btn_home;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JMenuItem jmenu_exit;
     private javax.swing.JLabel lb_subject;
     private javax.swing.JList<String> listMailSent;
+    private javax.swing.JTextField txt_attachmentFile;
     private javax.swing.JTextArea txt_message;
     private javax.swing.JTextField txt_recipient;
     private javax.swing.JTextField txt_search;

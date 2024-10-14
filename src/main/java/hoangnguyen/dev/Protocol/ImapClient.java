@@ -9,7 +9,10 @@ import java.io.*;
 import java.net.Socket;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.mail.internet.MimeUtility;
 
 public class ImapClient {
@@ -102,21 +105,103 @@ public class ImapClient {
         Email email = new Email();
         email.setId(id);
 
-        // Lấy tiêu đề
+        // Fetch email headers
         String headerResponse = sendCommand("FETCH " + id + " (BODY[HEADER.FIELDS (SUBJECT FROM TO DATE)])");
         parseHeaderResponse(headerResponse, email);
 
-        // Lấy nội dung
+        // Fetch email structure
+        String structureResponse = sendCommand("FETCH " + id + " BODYSTRUCTURE");
+        boolean hasAttachment = checkForAttachments(structureResponse);
+        email.setHasAttachment(hasAttachment);
+        
+        if (hasAttachment) {
+            String attachmentName = extractAttachmentName(structureResponse);
+            email.setAttachmentName(attachmentName);
+        }
+
+        // Fetch email body
         String bodyResponse = sendCommandAndReadFullResponse("FETCH " + id + " (BODY[TEXT])");
         email.setBody(parseBodyResponse(bodyResponse));
-
-        // Kiểm tra tệp đính kèm
-//        String structureResponse = sendCommand("FETCH " + id + " (BODYSTRUCTURE)");
-//        email.setHasAttachment(checkForAttachments(structureResponse));
-
+ 
         return email;
     }
     
+    public byte[] downloadAttachment(String emailId, String attachmentName) throws IOException {
+        // Fetch the BODYSTRUCTURE to find the part number of the attachment
+        String structureResponse = sendCommand("FETCH " + emailId + " BODYSTRUCTURE");
+        String partNumber = findAttachmentPartNumber(structureResponse, attachmentName);
+        
+        if (partNumber == null) {
+            throw new IOException("Attachment not found: " + attachmentName);
+        }
+
+        // Fetch the attachment data
+        String fetchCommand = "FETCH " + emailId + " (BODY[" + partNumber + "])";
+        String response = sendCommandAndReadFullResponse(fetchCommand);
+
+        // Extract the attachment data from the response
+        int startIndex = response.indexOf("{");
+        int endIndex = response.lastIndexOf(")");
+        if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) {
+            throw new IOException("Invalid response format when fetching attachment");
+        }
+        
+        // Extract the base64 encoded data
+        String base64Data = extractBase64Data(response);
+        return Base64.getDecoder().decode(base64Data);
+    }
+    
+    private String extractAttachmentName(String structureResponse) {
+        // Use a regular expression to find the filename
+        Pattern pattern = Pattern.compile("\"filename\"\\s+\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(structureResponse);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+    
+    private String findAttachmentPartNumber(String structureResponse, String attachmentName) {
+        // Tìm phần BODYSTRUCTURE chứa thông tin về các phần MIME
+        String[] parts = structureResponse.split("\\(\\(");
+
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i].toUpperCase(); // Chuyển về uppercase để so sánh không phân biệt hoa thường
+
+            // Kiểm tra xem phần này có chứa "ATTACHMENT" và tên tệp không
+            if (part.contains("ATTACHMENT") && part.contains(attachmentName.toUpperCase())) {
+                // Part number bắt đầu từ 1 (IMAP sử dụng indexing từ 1)
+                return String.valueOf(i + 1);
+            }
+        }
+
+        return null; // Nếu không tìm thấy tệp đính kèm
+    }
+    
+    /**
+     * Tách chính xác dữ liệu base64 từ phản hồi và loại bỏ các ký tự không hợp lệ.
+     */
+    private String extractBase64Data(String response) {
+    // Dùng regex để tìm dữ liệu base64 nhưng không loại bỏ các ký tự
+        Pattern BASE64_PATTERN = Pattern.compile("\\{(\\d+)}\\s*(.*)");
+        Matcher matcher = BASE64_PATTERN.matcher(response);
+        if (matcher.find()) {
+            String base64Data = matcher.group(2).trim();
+            // Kiểm tra xem dữ liệu có đủ các ký tự base64 hợp lệ không
+            if (base64Data.length() % 4 == 0) {
+                return base64Data;
+            } else {
+                // Bổ sung padding nếu thiếu
+                while (base64Data.length() % 4 != 0) {
+                    base64Data += "=";
+                }
+                return base64Data;
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid response format for base64 data");
+        }
+    }
+
     private String sendCommandAndReadFullResponse(String command) throws IOException {
         writer.write(tag + " " + command + "\r\n");
         writer.flush();
@@ -169,17 +254,31 @@ public class ImapClient {
     }
 
     private String parseBodyResponse(String response) {
-        int startIndex = response.indexOf("\r\n\r\n");
-        int endIndex = response.lastIndexOf(")");
-        if (startIndex != -1 && endIndex != -1) {
-            return response.substring(startIndex + 4, endIndex).trim();
+    int startIndex = response.indexOf("\r\n\r\n");
+    if (startIndex != -1) {
+        // Extract the body part after the header part
+        String body = response.substring(startIndex + 4).trim();
+        
+        // If the body is multipart, find the first text part
+        int textPartStart = body.indexOf("\r\n--");
+        if (textPartStart != -1) {
+            body = body.substring(0, textPartStart).trim();
         }
-        return "";
-    }
 
-    private boolean checkForAttachments(String response) {
-        // Kiểm tra xem có phần nào trong cấu trúc email là attachment không
-        return response.toLowerCase().contains("attachment");
+        // Remove any MIME headers and trim whitespace
+        int contentStart = body.indexOf("\r\n\r\n");
+        if (contentStart != -1) {
+            body = body.substring(contentStart + 4).trim();
+        }
+
+        return body;
+    }
+    return "";
+}
+
+    private boolean checkForAttachments(String structureResponse) {
+        // Check if the response contains "ATTACHMENT" (case-insensitive)
+        return structureResponse.toLowerCase().contains("attachment");
     }
 
     private String decodeSubject(String encodedSubject) {
@@ -190,19 +289,19 @@ public class ImapClient {
         }
     }
 
-    private String fetchEmailSubject(String id) throws IOException {
-        String response = sendCommand("FETCH " + id + " (BODY[HEADER.FIELDS (SUBJECT)])");
-        String subject = "Unknown Subject";
-        String[] lines = response.split("\r\n");
-        for (String line : lines) {
-            if (line.startsWith("Subject:")) {
-                subject = line.substring(9).trim();
-                break;
-            }
-        }
-        return id + ": " + subject;
-    }
-
+//    private String fetchEmailSubject(String id) throws IOException {
+//        String response = sendCommand("FETCH " + id + " (BODY[HEADER.FIELDS (SUBJECT)])");
+//        String subject = "Unknown Subject";
+//        String[] lines = response.split("\r\n");
+//        for (String line : lines) {
+//            if (line.startsWith("Subject:")) {
+//                subject = line.substring(9).trim();
+//                break;
+//            }
+//        }
+//        return id + ": " + subject;
+//    }
+    
     public void logout() throws IOException {
         sendCommand("LOGOUT");
     }
@@ -247,5 +346,4 @@ public class ImapClient {
         }
         return folders;
     }
-
 }

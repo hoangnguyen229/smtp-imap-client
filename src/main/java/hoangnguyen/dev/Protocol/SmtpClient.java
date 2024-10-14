@@ -144,27 +144,27 @@ public class SmtpClient {
     }
 
     public static void main(String[] args) {
-        SmtpClient smtpClient = new SmtpClient();
-        try {
-            smtpClient.connect("smtp.gmail.com", 587); // Kết nối tới máy chủ Gmail
-
-            smtpClient.sendHelo("hoangnguyen.dev");
-
-            // Bước mới: Gửi lệnh STARTTLS
-            smtpClient.sendStartTls();
-
-            // Bước mới: Xác thực với tên người dùng và mật khẩu Gmail
-            smtpClient.authenticate("chauduonghuetch@gmail.com", "tctj pslj vnmp xnha");
-
-            smtpClient.sendMailFrom("chauduonghuetch@gmail.com");
-            smtpClient.sendRcptTo("vanhoang1231234@gmail.com");
-            smtpClient.sendData("Tiêu đề thư", "Nội dung của email này.");
-            smtpClient.sendQuit();
-
-            // Đóng kết nối
-            smtpClient.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        SmtpClient smtpClient = new SmtpClient();
+//        try {
+//            smtpClient.connect("smtp.gmail.com", 587); // Kết nối tới máy chủ Gmail
+//
+//            smtpClient.sendHelo("hoangnguyen.dev");
+//
+//            // Bước mới: Gửi lệnh STARTTLS
+//            smtpClient.sendStartTls();
+//
+//            // Bước mới: Xác thực với tên người dùng và mật khẩu Gmail
+//            smtpClient.authenticate("chauduonghuetch@gmail.com", "tctj pslj vnmp xnha");
+//
+//            smtpClient.sendMailFrom("chauduonghuetch@gmail.com");
+//            smtpClient.sendRcptTo("vanhoang1231234@gmail.com");
+//            smtpClient.sendData("Tiêu đề thư", "Nội dung của email này.");
+//            smtpClient.sendQuit();
+//
+//            // Đóng kết nối
+//            smtpClient.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 }

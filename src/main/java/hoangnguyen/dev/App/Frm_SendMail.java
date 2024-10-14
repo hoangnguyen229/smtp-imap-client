@@ -15,10 +15,14 @@ import javax.swing.JOptionPane;
  */
 public class Frm_SendMail extends javax.swing.JFrame {
     private EmailAction emailAction;
+    private static String userEmail;
+    private static String password;
     /**
      * Creates new form Frm_SendMail
      */
-    public Frm_SendMail(EmailAction emailManager) {
+    public Frm_SendMail(EmailAction emailManager, String userEmail, String password) {
+        this.userEmail = userEmail;
+        this.password = password;
         this.emailAction = emailManager;
         initComponents();
     }
@@ -220,7 +224,7 @@ public class Frm_SendMail extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_chooseFileActionPerformed
 
     private void btn_backActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_backActionPerformed
-        Frm_Home frm_Home = new Frm_Home();
+        Frm_Home frm_Home = new Frm_Home(this.userEmail,this.password);
         frm_Home.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btn_backActionPerformed
@@ -256,7 +260,7 @@ public class Frm_SendMail extends javax.swing.JFrame {
         EmailAction emailAction = new EmailAction();
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Frm_SendMail(emailAction).setVisible(true);
+                new Frm_SendMail(emailAction,userEmail,password).setVisible(true);
             }
         });
     }

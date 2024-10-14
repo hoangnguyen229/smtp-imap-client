@@ -16,6 +16,7 @@ public class Email {
     private String date;
     private String body;
     private boolean hasAttachment;
+    private String attachmentName;
 
     public String getId() {
         return id;
@@ -71,6 +72,14 @@ public class Email {
 
     public void setHasAttachment(boolean hasAttachment) {
         this.hasAttachment = hasAttachment;
+    }
+
+    public String getAttachmentName() {
+        return attachmentName;
+    }
+
+    public void setAttachmentName(String attachmentName) {
+        this.attachmentName = attachmentName;
     }
     
     

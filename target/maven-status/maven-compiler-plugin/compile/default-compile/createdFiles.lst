@@ -9,6 +9,7 @@ hoangnguyen\dev\App\Frm_SendMail$2.class
 hoangnguyen\dev\App\EmailAction.class
 hoangnguyen\dev\App\Frm_AuthenticationEmail.class
 hoangnguyen\dev\App\Frm_ListMailReceive$4.class
+hoangnguyen\dev\App\Frm_ListMailSend$6.class
 hoangnguyen\dev\App\Frm_ListMailSend$1.class
 hoangnguyen\dev\App\Frm_ListMailReceive$1.class
 hoangnguyen\dev\App\Frm_SendMail$3.class

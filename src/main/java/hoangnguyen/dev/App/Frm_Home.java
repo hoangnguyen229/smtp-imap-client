@@ -125,7 +125,7 @@ public class Frm_Home extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_sendMailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_sendMailActionPerformed
-        Frm_SendMail frm_SendMail = new Frm_SendMail(emailAction);
+        Frm_SendMail frm_SendMail = new Frm_SendMail(emailAction,userEmail,password);
         frm_SendMail.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btn_sendMailActionPerformed
