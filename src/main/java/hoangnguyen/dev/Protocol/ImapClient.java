@@ -7,12 +7,15 @@ package hoangnguyen.dev.Protocol;
 import hoangnguyen.dev.App.Email;
 import java.io.*;
 import java.net.Socket;
+import java.text.Normalizer;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.mail.Flags;
+import javax.mail.Message;
 import javax.mail.internet.MimeUtility;
 
 public class ImapClient {
@@ -107,25 +110,37 @@ public class ImapClient {
 
         // Fetch email headers
         String headerResponse = sendCommand("FETCH " + id + " (BODY[HEADER.FIELDS (SUBJECT FROM TO DATE)])");
-        parseHeaderResponse(headerResponse, email);
+        if (headerResponse != null && headerResponse.contains("FETCH")) {
+            parseHeaderResponse(headerResponse, email);
+        } else {
+            throw new IOException("Invalid header response: " + headerResponse);
+        }
 
         // Fetch email structure
         String structureResponse = sendCommand("FETCH " + id + " BODYSTRUCTURE");
-        boolean hasAttachment = checkForAttachments(structureResponse);
-        email.setHasAttachment(hasAttachment);
-        
-        if (hasAttachment) {
-            String attachmentName = extractAttachmentName(structureResponse);
-            email.setAttachmentName(attachmentName);
+        if (structureResponse != null && structureResponse.contains("BODYSTRUCTURE")) {
+            boolean hasAttachment = checkForAttachments(structureResponse);
+            email.setHasAttachment(hasAttachment);
+
+            if (hasAttachment) {
+                String attachmentName = extractAttachmentName(structureResponse);
+                email.setAttachmentName(attachmentName);
+            }
+        } else {
+            throw new IOException("Invalid structure response: " + structureResponse);
         }
 
         // Fetch email body
         String bodyResponse = sendCommandAndReadFullResponse("FETCH " + id + " (BODY[TEXT])");
-        email.setBody(parseBodyResponse(bodyResponse));
- 
+        if (bodyResponse != null && bodyResponse.contains("BODY")) {
+            email.setBody(parseBodyResponse(bodyResponse));
+        } else {
+            throw new IOException("Invalid body response: " + bodyResponse);
+        }
+
         return email;
     }
-    
+
     public byte[] downloadAttachment(String emailId, String attachmentName) throws IOException {
         // Fetch the BODYSTRUCTURE to find the part number of the attachment
         String structureResponse = sendCommand("FETCH " + emailId + " BODYSTRUCTURE");
@@ -203,40 +218,47 @@ public class ImapClient {
     }
 
     private String sendCommandAndReadFullResponse(String command) throws IOException {
-        writer.write(tag + " " + command + "\r\n");
-        writer.flush();
-        System.out.println("Client: " + tag + " " + command);
+     writer.write(tag + " " + command + "\r\n");
+     writer.flush();
+     System.out.println("Client: " + tag + " " + command);
 
-        StringBuilder response = new StringBuilder();
-        String line;
-        int contentLength = -1;
+     StringBuilder response = new StringBuilder();
+     String line;
+     int contentLength = -1;
 
-        while ((line = reader.readLine()) != null) {
-            System.out.println("Server: " + line);
-            response.append(line).append("\r\n");
+     while ((line = reader.readLine()) != null) {
+         System.out.println("Server: " + line);
+         response.append(line).append("\r\n");
 
-            if (line.contains("{")) {
-                int startIndex = line.lastIndexOf("{") + 1;
-                int endIndex = line.lastIndexOf("}");
-                if (startIndex < endIndex) {
-                    contentLength = Integer.parseInt(line.substring(startIndex, endIndex));
-                }
-            }
+         if (line.contains("{")) {
+             int startIndex = line.lastIndexOf("{") + 1;
+             int endIndex = line.lastIndexOf("}");
 
-            if (contentLength > 0) {
-                char[] buffer = new char[contentLength];
-                reader.read(buffer, 0, contentLength);
-                response.append(buffer);
-                contentLength = -1;
-            }
+             if (startIndex < endIndex) {
+                 String lengthString = line.substring(startIndex, endIndex).trim();
+                 try {
+                     contentLength = Integer.parseInt(lengthString);
+                 } catch (NumberFormatException e) {
+                     System.out.println("Lỗi: Đầu vào không phải là một số hợp lệ: " + lengthString);
+                     contentLength = -1; // Đặt lại contentLength để không đọc dữ liệu không hợp lệ
+                 }
+             }
+         }
 
-            if (line.startsWith(tag + " OK") || line.startsWith(tag + " NO") || line.startsWith(tag + " BAD")) {
-                break;
-            }
-        }
-        tag++;
-        return response.toString();
-    }
+         if (contentLength > 0) {
+             char[] buffer = new char[contentLength];
+             reader.read(buffer, 0, contentLength);
+             response.append(buffer);
+             contentLength = -1; // Đặt lại để tránh đọc lại dữ liệu không cần thiết
+         }
+
+         if (line.startsWith(tag + " OK") || line.startsWith(tag + " NO") || line.startsWith(tag + " BAD")) {
+             break;
+         }
+     }
+     tag++;
+     return response.toString();
+ }
 
     private void parseHeaderResponse(String response, Email email) throws IOException {
         String[] lines = response.split("\r\n");
@@ -346,4 +368,78 @@ public class ImapClient {
         }
         return folders;
     }
+    
+    public boolean deleteEmail(String emailId) throws IOException {
+        // Đánh dấu email để xóa
+        String response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        if (!response.contains("OK")) {
+            return false; // Không thể đánh dấu để xóa
+        }
+
+        // Xóa các email đã đánh dấu
+        response = sendCommand("EXPUNGE");
+        return response.contains("OK");
+    }
+    
+    public boolean moveToTrash(String emailId) throws IOException {
+        // Tên thư mục thùng rác với mã hóa UTF-7
+        String trashFolder = "[Gmail]/Th&APk-ng r&AOE-c"; 
+
+        // Sao chép email vào thư mục thùng rác
+        String response = sendCommand("COPY " + emailId + " \"" + trashFolder + "\"");
+        System.out.println("COPY response: " + response); // In phản hồi từ lệnh COPY
+        if (!response.contains("OK")) {
+            System.err.println("Failed to copy email to trash.");
+            return false; // Không thể sao chép email vào thùng rác
+        }
+
+        // Đánh dấu email là đã xóa bằng cách thêm cờ \\Deleted
+        response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        System.out.println("STORE response: " + response); // In phản hồi từ lệnh STORE
+        if (!response.contains("OK")) {
+            System.err.println("Failed to mark email as deleted.");
+            return false; // Không thể đánh dấu email là đã xóa
+        }
+
+        // Gọi lệnh EXPUNGE để thực hiện việc xóa email đã đánh dấu
+        response = sendCommand("EXPUNGE");
+        System.out.println("EXPUNGE response: " + response); // In phản hồi từ lệnh EXPUNGE
+        if (!response.contains("OK")) {
+            System.err.println("Failed to expunge deleted email.");
+            return false; // Không thể xóa email đã đánh dấu
+        }
+
+        return true; // Nếu hoàn tất, trả về true
+    }
+
+    // Phương thức di chuyển email vào hộp thư đến
+    public boolean moveToInbox(String emailId) throws IOException {
+        // Đặt tên thư mục đến
+        String inboxFolder = "INBOX"; 
+
+        // Sao chép email vào thư mục đến
+        String response = sendCommand("COPY " + emailId + " \"" + inboxFolder + "\"");
+        System.out.println("COPY response: " + response); // In phản hồi từ lệnh COPY
+        if (!response.contains("OK")) {
+            return false; // Không thể sao chép email
+        }
+
+        // Đánh dấu email để xóa
+        response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        System.out.println("STORE response: " + response); // In phản hồi từ lệnh STORE
+        if (!response.contains("OK")) {
+            return false; // Không thể đánh dấu email
+        }
+
+        // Gọi lệnh EXPUNGE để thực hiện xóa
+        response = sendCommand("EXPUNGE");
+        System.out.println("EXPUNGE response: " + response); // In phản hồi từ lệnh EXPUNGE
+        if (!response.contains("OK")) {
+            return false; // Không thể xóa email
+        }
+
+        return true; // Nếu đã hoàn tất, trả về true
+    }
+    
+ 
 }

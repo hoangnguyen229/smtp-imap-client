@@ -30,66 +30,9 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
      * Creates new form frmHome
      */
     public Frm_ListMailSend(){
-        
-    }
-    public Frm_ListMailSend(String imapHost, int imapPort, String userEmail, String password) {
-        this.userEmail = userEmail;
-        this.password = password;
-        this.imapHost = imapHost;
-        this.imapPort = imapPort;
         initComponents();
-        setupImapClient();
-        btn_attachment.setEnabled(false);
     }
     
-    private void setupImapClient(){
-        imapClient = new ImapClient();
-        listModel = new DefaultListModel<>();
-        listMailSent.setModel(listModel);
-        try{
-            imapClient.connect(MailConfig.imapHost, MailConfig.TLS_PORT);
-            if(imapClient.login(userEmail,password)){
-                List<String> folders = imapClient.listFolders();
-                for(String folder : folders){
-                    System.out.println(folder);
-                }
-                if(imapClient.selectFolder("[Gmail]/Th&AbA- &AREA4w- g&Hu0-i")){ // Thư mục chứa các thư đã gửi đi
-                    emails = imapClient.listEmails();
-                    for(Email email : emails){
-                        listModel.addElement(email.getSubject());
-                    }
-                }
-                else{
-                    System.out.println("Failed to select folder");
-                }
-            }
-            else{
-                System.out.println("Login failed");
-            }
-        }
-        catch(IOException ex){
-            ex.printStackTrace();
-        }
-    }
-    
-    private void displayEmailDetails(int index){
-        Email email = emails.get(index);
-        lb_subject.setText(email.getSubject());
-        txt_senderName.setText(email.getSender());
-        txt_sentDate.setText(email.getDate());
-        txt_recipient.setText(email.getRecipient());
-        txt_message.setText(email.getBody());
-//        txt_attachment.setText(email.isHasAttachment() ? "Có tệp đính kèm" : "Không có tệp đính kèm");
-        if(email.isHasAttachment()){
-            txt_attachmentFile.setText(email.getAttachmentName());
-            btn_attachment.setEnabled(true);
-        }
-        else{
-            txt_attachmentFile.setText("No attachment");
-            btn_attachment.setEnabled(false);
-                    
-        }
-    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -101,6 +44,7 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     private void initComponents() {
 
         jSeparator1 = new javax.swing.JSeparator();
+        jButton1 = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -119,9 +63,13 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
         btn_attachment = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         txt_search = new javax.swing.JTextField();
+        btnSearch = new javax.swing.JButton();
+        btnDelete = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         btn_home = new javax.swing.JMenu();
         jmenu_exit = new javax.swing.JMenuItem();
+
+        jButton1.setText("jButton1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -247,6 +195,20 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
+        btnSearch.setText("Search");
+        btnSearch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSearchActionPerformed(evt);
+            }
+        });
+
+        btnDelete.setText("Delete");
+        btnDelete.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteActionPerformed(evt);
+            }
+        });
+
         btn_home.setText("Home");
         btn_home.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -275,27 +237,87 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                .addComponent(btnDelete)
+                .addContainerGap())
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 439, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(155, 155, 155))
+                .addGap(18, 18, 18)
+                .addComponent(btnSearch)
+                .addGap(62, 62, 62))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnSearch))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(79, 79, 79)
+                        .addComponent(btnDelete)))
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    public Frm_ListMailSend(String imapHost, int imapPort, String userEmail, String password) {
+        this.userEmail = userEmail;
+        this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
+        initComponents();
+        setupImapClient();
+        btn_attachment.setEnabled(false);
+    }
+    
+    private void setupImapClient(){
+        imapClient = new ImapClient();
+        listModel = new DefaultListModel<>();
+        listMailSent.setModel(listModel);
+        try{
+            imapClient.connect(MailConfig.imapHost, MailConfig.TLS_PORT);
+            if(imapClient.login(userEmail,password)){
+                List<String> folders = imapClient.listFolders();
+                for(String folder : folders){
+                    System.out.println(folder);
+                }
+                if(imapClient.selectFolder("[Gmail]/Th&AbA- &AREA4w- g&Hu0-i")){ // Thư mục chứa các thư đã gửi đi
+                    emails = imapClient.listEmails();
+                    for(Email email : emails){
+                        listModel.addElement(email.getSubject());
+                    }
+                }
+                else{
+                    System.out.println("Failed to select folder");
+                }
+            }
+            else{
+                System.out.println("Login failed");
+            }
+        }
+        catch(IOException ex){
+            ex.printStackTrace();
+        }
+    }
+    
+    private void displayEmailDetails(int index){
+        Email email = emails.get(index);
+        lb_subject.setText(email.getSubject());
+        txt_senderName.setText(email.getSender());
+        txt_sentDate.setText(email.getDate());
+        txt_recipient.setText(email.getRecipient());
+        txt_message.setText(email.getBody());
+    }
+    
     private void btn_homeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_homeActionPerformed
         
     }//GEN-LAST:event_btn_homeActionPerformed
@@ -316,39 +338,50 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     }//GEN-LAST:event_listMailSentValueChanged
 
     private void btn_attachmentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_attachmentActionPerformed
-        int selectedIndex = listMailSent.getSelectedIndex();
-        if(selectedIndex != -1){
-            Email email = emails.get(selectedIndex);
-            if(email.isHasAttachment()){
-                try{
-                    byte[] attachmentData = imapClient.downloadAttachment(email.getId(), email.getAttachmentName());
-                    saveAndOpenAttachment(attachmentData, email.getAttachmentName());
-                }
-                catch(IOException ex){
-                    JOptionPane.showMessageDialog(this, "Error downloading attachment: " + ex.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }//GEN-LAST:event_btn_attachmentActionPerformed
-    
-    private void saveAndOpenAttachment(byte[] attachmentData, String fileName) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Save Attachment");
-        fileChooser.setSelectedFile(new File(fileName)); // Đặt tên file mặc định
 
-        // Hiển thị hộp thoại lưu file
-        int userSelection = fileChooser.showSaveDialog(this);
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-            try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
-                fos.write(attachmentData);
-                // Mở file sau khi lưu
-                Desktop.getDesktop().open(fileToSave);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error saving or opening attachment: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }//GEN-LAST:event_btn_attachmentActionPerformed
+
+    private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSearchActionPerformed
+       
+    }//GEN-LAST:event_btnSearchActionPerformed
+
+    private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
+           int selectedIndex = listMailSent.getSelectedIndex(); // Lấy chỉ số của email được chọn trong danh sách
+        if (selectedIndex != -1) { // Kiểm tra xem có email nào được chọn hay không
+            Email emailToDelete = emails.get(selectedIndex); // Lấy đối tượng email từ danh sách email dựa trên chỉ số được chọn
+            try {
+                // Di chuyển email vào thùng rác bằng phương thức moveToTrash từ imapClient
+                boolean success = imapClient.moveToTrash(emailToDelete.getId());
+
+                if (success) {
+                    // Cập nhật lại danh sách: xóa email vừa được di chuyển khỏi danh sách
+                    listModel.remove(selectedIndex);
+                    emails.remove(selectedIndex); 
+
+                    // Xóa chi tiết của email khỏi giao diện (reset các ô nhập liệu)
+                    lb_subject.setText(""); 
+                    txt_senderName.setText("");
+                    txt_sentDate.setText("");
+                    txt_recipient.setText("");
+                    txt_message.setText("");
+
+                    // Hiển thị thông báo thành công
+                    JOptionPane.showMessageDialog(this, "The email has been successfully delivered to the box!");
+                } else {
+                    // Hiển thị thông báo lỗi nếu không di chuyển được email
+                    JOptionPane.showMessageDialog(this, "Email could not be moved to trash.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                // Hiển thị thông báo lỗi nếu có ngoại lệ xảy ra
+                JOptionPane.showMessageDialog(this, "An error occurred while transferring email: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } else {
+            // Hiển thị thông báo nếu không có email nào được chọn
+            JOptionPane.showMessageDialog(this, "Please select email to delete.", "Warning", JOptionPane.WARNING_MESSAGE);
         }
-    }
+    }//GEN-LAST:event_btnDeleteActionPerformed
+    
     /**
      * @param args the command line arguments
      */
@@ -416,8 +449,11 @@ public class Frm_ListMailSend extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnDelete;
+    private javax.swing.JButton btnSearch;
     private javax.swing.JButton btn_attachment;
     private javax.swing.JMenu btn_home;
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
