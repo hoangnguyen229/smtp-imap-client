@@ -18,7 +18,7 @@ import javax.swing.JOptionPane;
  *
  * @author Dell
  */
-public class Frm_ListMailReceive extends javax.swing.JFrame {
+public class Frm_Trash extends javax.swing.JFrame {
 
     private ImapClient imapClient;
     private DefaultListModel<String> listModel;
@@ -30,11 +30,59 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
     /**
      * Creates new form frmHome
      */
-    public Frm_ListMailReceive() {
+    public Frm_Trash() {
         initComponents();
     }
 
+    public Frm_Trash(String imapHost, int imapPort, String userEmail, String password) {
+        this.userEmail = userEmail;
+        this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
+        initComponents();
+        setupImapClient();
+    }
     
+    private void setupImapClient() {
+        imapClient = new ImapClient();
+        listModel = new DefaultListModel<>(); // Khởi tạo mô hình danh sách
+        listTrash.setModel(listModel); // Gán mô hình vào JList
+
+        try {
+            imapClient.connect(imapHost, imapPort); // Kết nối với server IMAP
+            if (imapClient.login(userEmail, password)) {
+                List<String> folders = imapClient.listFolders(); // Lấy danh sách thư mục
+                for (String folder : folders) {
+                    System.out.println(folder); // In ra danh sách thư mục
+                }
+
+                // Chọn thư mục "INBOX"
+                if (imapClient.selectFolder("[Gmail]/Th&APk-ng r&AOE-c")) { // Chọn "INBOX" thay vì "[Gmail]/INBOX"
+                    emails = imapClient.listEmails(); // Lấy danh sách email
+                    for (Email email : emails) {
+                        listModel.addElement(email.getSubject()); // Thêm tiêu đề email vào mô hình
+                    }
+                } else {
+                    System.out.println("Failed to select folder");
+                }
+            } else {
+                System.out.println("Login failed");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace(); // Xử lý lỗi
+        }
+    }
+
+    
+    private void displayEmailDetails(int index) {
+        Email email = emails.get(index);
+        lb_subject.setText(email.getSubject());
+        txt_sender.setText(email.getDecodedSender());  
+        txt_date.setText(email.getDate());
+        txt_receiver.setText(email.getDecodedRecipient()); 
+        txt_message.setText(email.getBody());
+
+    }
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -45,47 +93,47 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jButton1 = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        listMailReceived = new javax.swing.JList<>();
+        listTrash = new javax.swing.JList<>();
         jPanel3 = new javax.swing.JPanel();
         lb_subject = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
-        txt_recipientName = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
         txt_sender = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        txt_receiver = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
-        txt_receivingDate = new javax.swing.JTextField();
-        jLabel5 = new javax.swing.JLabel();
-        txt_attachmentFile = new javax.swing.JTextField();
-        btn_attachment = new javax.swing.JButton();
+        txt_date = new javax.swing.JTextField();
         jScrollPane2 = new javax.swing.JScrollPane();
         txt_message = new javax.swing.JTextArea();
-        txt_search = new javax.swing.JTextField();
         btnDelete = new javax.swing.JButton();
+        btnMovetoReceived = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         btn_home = new javax.swing.JMenu();
         jmenu_exit = new javax.swing.JMenuItem();
+
+        jButton1.setText("jButton1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel2.setText("Received Mail List");
+        jLabel2.setText("Trash email list");
 
-        listMailReceived.setModel(new javax.swing.AbstractListModel<String>() {
+        listTrash.setModel(new javax.swing.AbstractListModel<String>() {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
         });
-        listMailReceived.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+        listTrash.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
-                listMailReceivedValueChanged(evt);
+                listTrashValueChanged(evt);
             }
         });
-        jScrollPane1.setViewportView(listMailReceived);
+        jScrollPane1.setViewportView(listTrash);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -94,10 +142,11 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 185, Short.MAX_VALUE)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addGap(0, 83, Short.MAX_VALUE))
-                    .addComponent(jScrollPane1))
+                        .addGap(29, 29, 29)
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel2Layout.setVerticalGroup(
@@ -115,22 +164,11 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         lb_subject.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         lb_subject.setText("Subject");
 
-        jLabel1.setText("Recipient name:");
+        jLabel1.setText("Sender:");
 
-        jLabel4.setText("Sender:");
+        jLabel4.setText("Receiver:");
 
-        jLabel3.setText("Receiving date:");
-
-        jLabel5.setText("Attached file:");
-
-        txt_attachmentFile.setText("No attachment");
-
-        btn_attachment.setText("Save As");
-        btn_attachment.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_attachmentActionPerformed(evt);
-            }
-        });
+        jLabel3.setText("Date:");
 
         txt_message.setColumns(20);
         txt_message.setRows(5);
@@ -146,25 +184,23 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                     .addComponent(lb_subject, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 509, Short.MAX_VALUE)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txt_receivingDate, javax.swing.GroupLayout.PREFERRED_SIZE, 410, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(txt_recipientName))
-                            .addGroup(jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel5)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txt_attachmentFile)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btn_attachment))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                                .addComponent(jLabel4)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(txt_sender, javax.swing.GroupLayout.PREFERRED_SIZE, 416, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(jPanel3Layout.createSequentialGroup()
+                                        .addGap(12, 12, 12)
+                                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addComponent(jLabel4)
+                                            .addComponent(jLabel3))
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                                        .addGap(0, 0, Short.MAX_VALUE)
+                                        .addComponent(jLabel1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(txt_date)
+                                    .addComponent(txt_sender)
+                                    .addComponent(txt_receiver, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE))))
                         .addContainerGap())))
         );
         jPanel3Layout.setVerticalGroup(
@@ -175,31 +211,31 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(txt_recipientName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txt_sender, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txt_sender, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txt_receiver, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
-                    .addComponent(txt_receivingDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(txt_date, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txt_attachmentFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btn_attachment)
-                    .addComponent(jLabel5))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(47, Short.MAX_VALUE))
         );
-
-        txt_search.setText("Search");
 
         btnDelete.setText("Delete");
         btnDelete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnDeleteActionPerformed(evt);
+            }
+        });
+
+        btnMovetoReceived.setText("Move to Received");
+        btnMovetoReceived.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnMovetoReceivedActionPerformed(evt);
             }
         });
 
@@ -231,85 +267,30 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(btnDelete)
-                .addContainerGap(10, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 439, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(155, 155, 155))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnDelete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnMovetoReceived, javax.swing.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(44, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(39, 39, 39)
-                        .addComponent(btnDelete, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(11, 11, 11)
+                        .addComponent(btnDelete, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnMovetoReceived, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    
-    public Frm_ListMailReceive(String imapHost, int imapPort, String userEmail, String password) {
-        this.userEmail = userEmail;
-        this.password = password;
-        this.imapHost = imapHost;
-        this.imapPort = imapPort;
-        initComponents();
-        setupImapClient();
-        btn_attachment.setEnabled(false);
-    }
-    
-    private void setupImapClient() {
-        imapClient = new ImapClient();
-        listModel = new DefaultListModel<>(); // Khởi tạo mô hình danh sách
-        listMailReceived.setModel(listModel); // Gán mô hình vào JList
-
-        try {
-            imapClient.connect(imapHost, imapPort); // Kết nối với server IMAP
-            if (imapClient.login(userEmail, password)) {
-                List<String> folders = imapClient.listFolders(); // Lấy danh sách thư mục
-                for (String folder : folders) {
-                    System.out.println(folder); // In ra danh sách thư mục
-                }
-
-                // Chọn thư mục "INBOX"
-                if (imapClient.selectFolder("INBOX")) { // Chọn "INBOX" thay vì "[Gmail]/INBOX"
-                    emails = imapClient.listEmails(); // Lấy danh sách email
-                    for (Email email : emails) {
-                        listModel.addElement(email.getSubject()); // Thêm tiêu đề email vào mô hình
-                    }
-                } else {
-                    System.out.println("Failed to select folder");
-                }
-            } else {
-                System.out.println("Login failed");
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace(); // Xử lý lỗi
-        }
-    }
-
-    
-    private void displayEmailDetails(int index) {
-        Email email = emails.get(index);
-        lb_subject.setText(email.getSubject());
-        txt_recipientName.setText(email.getDecodedRecipient()); 
-        txt_receivingDate.setText(email.getDate());
-        txt_sender.setText(email.getDecodedSender()); 
-        txt_message.setText(email.getBody());
-
-    }
     private void btn_homeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_homeActionPerformed
         
     }//GEN-LAST:event_btn_homeActionPerformed
@@ -320,55 +301,68 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         this.dispose();
     }//GEN-LAST:event_jmenu_exitActionPerformed
 
-    private void btn_attachmentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_attachmentActionPerformed
-
-    }//GEN-LAST:event_btn_attachmentActionPerformed
-
-    private void listMailReceivedValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_listMailReceivedValueChanged
+    
+    private void listTrashValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_listTrashValueChanged
         if(!evt.getValueIsAdjusting()){
-            int selectedIndex = listMailReceived.getSelectedIndex();
+            int selectedIndex = listTrash.getSelectedIndex();
             if(selectedIndex != -1){
                 displayEmailDetails(selectedIndex);
             }
         }
-    }//GEN-LAST:event_listMailReceivedValueChanged
+    }//GEN-LAST:event_listTrashValueChanged
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
-
-    int selectedIndex = listMailReceived.getSelectedIndex();
+        int selectedIndex = listTrash.getSelectedIndex();
     if (selectedIndex != -1) {
         Email emailToDelete = emails.get(selectedIndex);
         try {
-            boolean success = imapClient.moveToTrash(emailToDelete.getId());
-
-            if (success) {
-                // Update the display: Remove the email from the listModel and emails list
-                listModel.remove(selectedIndex);
-                emails.remove(selectedIndex);
-
-                // Clear the details of the deleted email
+            imapClient.deleteEmail(emailToDelete.getId());
+            listModel.remove(selectedIndex);
+            emails.remove(selectedIndex);
+             // Xóa nội dung chi tiết email đã xóa
                 lb_subject.setText(""); 
-                txt_recipientName.setText("");
-                txt_receivingDate.setText("");
+                txt_receiver.setText("");
+                txt_date.setText("");
                 txt_sender.setText("");
                 txt_message.setText("");
-                
-                // Show a success message
-                JOptionPane.showMessageDialog(this, "Email has been successfully moved to trash!");
-            } else {
-                // Show an error message if the email could not be moved to trash
-                JOptionPane.showMessageDialog(this, "Failed to move email to trash.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            JOptionPane.showMessageDialog(this, "Email received deleted successfully!");
         } catch (Exception e) {
-            // Show an error message if an exception occurs
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "An error occurred while moving the email to trash: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to delete received email.");
         }
     } else {
-        // Show a warning message if no email is selected
-        JOptionPane.showMessageDialog(this, "No email selected.", "Warning", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(this, "No received email selected.");
     }
     }//GEN-LAST:event_btnDeleteActionPerformed
+
+    private void btnMovetoReceivedActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMovetoReceivedActionPerformed
+     int selectedIndex = listTrash.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Email emailToMove = emails.get(selectedIndex);
+            try {
+                // Di chuyển email về hộp thư đến
+                boolean success = imapClient.moveToInbox(emailToMove.getId());
+                if (success) {
+                    listModel.remove(selectedIndex); // Cập nhật danh sách hiển thị
+                    emails.remove(selectedIndex); // Cập nhật danh sách emails
+                    // Xóa nội dung chi tiết email đã xóa
+                    lb_subject.setText(""); 
+                    txt_receiver.setText("");
+                    txt_date.setText("");
+                    txt_sender.setText("");
+                    txt_message.setText("");
+                    JOptionPane.showMessageDialog(this, "Email has been migrated successfully.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to move email. Please try again.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace(); // Xử lý lỗi nếu có
+                JOptionPane.showMessageDialog(this, "An error occurred while moving the email.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "No email selected in Trash.");
+        }
+    }//GEN-LAST:event_btnMovetoReceivedActionPerformed
 
     /**
      * @param args the command line arguments
@@ -415,20 +409,20 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Frm_ListMailReceive().setVisible(true);
+                new Frm_Trash().setVisible(true);
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnDelete;
-    private javax.swing.JButton btn_attachment;
+    private javax.swing.JButton btnMovetoReceived;
     private javax.swing.JMenu btn_home;
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -436,12 +430,10 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JMenuItem jmenu_exit;
     private javax.swing.JLabel lb_subject;
-    private javax.swing.JList<String> listMailReceived;
-    private javax.swing.JTextField txt_attachmentFile;
+    private javax.swing.JList<String> listTrash;
+    private javax.swing.JTextField txt_date;
     private javax.swing.JTextArea txt_message;
-    private javax.swing.JTextField txt_receivingDate;
-    private javax.swing.JTextField txt_recipientName;
-    private javax.swing.JTextField txt_search;
+    private javax.swing.JTextField txt_receiver;
     private javax.swing.JTextField txt_sender;
     // End of variables declaration//GEN-END:variables
 }

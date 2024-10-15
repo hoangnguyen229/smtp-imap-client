@@ -53,7 +53,9 @@ public class Frm_SendMail extends javax.swing.JFrame {
         jLabel7 = new javax.swing.JLabel();
         txt_path = new javax.swing.JTextField();
         btn_chooseFile = new javax.swing.JButton();
-        btn_back = new javax.swing.JButton();
+        jMenuBar1 = new javax.swing.JMenuBar();
+        btn_home = new javax.swing.JMenu();
+        jmenu_exit = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -91,13 +93,24 @@ public class Frm_SendMail extends javax.swing.JFrame {
             }
         });
 
-        btn_back.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        btn_back.setText("Back");
-        btn_back.addActionListener(new java.awt.event.ActionListener() {
+        btn_home.setText("Home");
+        btn_home.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_backActionPerformed(evt);
+                btn_homeActionPerformed(evt);
             }
         });
+
+        jmenu_exit.setText("Exit");
+        jmenu_exit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jmenu_exitActionPerformed(evt);
+            }
+        });
+        btn_home.add(jmenu_exit);
+
+        jMenuBar1.add(btn_home);
+
+        setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -133,27 +146,26 @@ public class Frm_SendMail extends javax.swing.JFrame {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jScrollPane1)
                                     .addGroup(layout.createSequentialGroup()
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addComponent(btn_back, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addGap(35, 35, 35)
-                                                .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                            .addComponent(txt_path, javax.swing.GroupLayout.PREFERRED_SIZE, 359, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(txt_path, javax.swing.GroupLayout.PREFERRED_SIZE, 359, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addComponent(btn_chooseFile)
                                         .addGap(0, 0, Short.MAX_VALUE)))))))
                 .addGap(55, 55, 55))
             .addGroup(layout.createSequentialGroup()
-                .addGap(278, 278, 278)
+                .addGap(268, 268, 268)
                 .addComponent(jLabel1)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btn_send, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(246, 246, 246))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(13, 13, 13)
+                .addGap(25, 25, 25)
                 .addComponent(jLabel1)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(txt_to, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -173,15 +185,13 @@ public class Frm_SendMail extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 20, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel7)
                     .addComponent(txt_path, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btn_chooseFile))
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btn_send)
-                    .addComponent(btn_back))
+                .addComponent(btn_send)
                 .addGap(14, 14, 14))
         );
 
@@ -223,11 +233,15 @@ public class Frm_SendMail extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_chooseFileActionPerformed
 
-    private void btn_backActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_backActionPerformed
-        Frm_Home frm_Home = new Frm_Home(this.userEmail,this.password);
+    private void jmenu_exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmenu_exitActionPerformed
+        Frm_Home frm_Home = new Frm_Home(userEmail,password);
         frm_Home.setVisible(true);
         this.dispose();
-    }//GEN-LAST:event_btn_backActionPerformed
+    }//GEN-LAST:event_jmenu_exitActionPerformed
+
+    private void btn_homeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_homeActionPerformed
+
+    }//GEN-LAST:event_btn_homeActionPerformed
 
     /**
      * @param args the command line arguments
@@ -266,8 +280,8 @@ public class Frm_SendMail extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btn_back;
     private javax.swing.JButton btn_chooseFile;
+    private javax.swing.JMenu btn_home;
     private javax.swing.JButton btn_send;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -276,8 +290,10 @@ public class Frm_SendMail extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JMenuItem jmenu_exit;
     private javax.swing.JTextField txt_bcc;
     private javax.swing.JTextField txt_cc;
     private javax.swing.JTextArea txt_message;
