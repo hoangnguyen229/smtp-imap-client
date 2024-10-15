@@ -7,12 +7,15 @@ package hoangnguyen.dev.Protocol;
 import hoangnguyen.dev.App.Email;
 import java.io.*;
 import java.net.Socket;
+import java.text.Normalizer;
 import javax.net.ssl.SSLSocketFactory;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.mail.Flags;
+import javax.mail.Message;
 import javax.mail.internet.MimeUtility;
 
 public class ImapClient {
@@ -107,24 +110,38 @@ public class ImapClient {
 
         // Fetch email headers
         String headerResponse = sendCommand("FETCH " + id + " (BODY[HEADER.FIELDS (SUBJECT FROM TO DATE)])");
-        parseHeaderResponse(headerResponse, email);
+        if (headerResponse != null && headerResponse.contains("FETCH")) {
+            parseHeaderResponse(headerResponse, email);
+        } else {
+            throw new IOException("Invalid header response: " + headerResponse);
+        }
 
         // Fetch email structure
         String structureResponse = sendCommand("FETCH " + id + " BODYSTRUCTURE");
-        boolean hasAttachment = checkForAttachments(structureResponse);
-        email.setHasAttachment(hasAttachment);
-        
-        if (hasAttachment) {
-            String attachmentName = extractAttachmentName(structureResponse);
-            email.setAttachmentName(attachmentName);
+        if (structureResponse != null && structureResponse.contains("BODYSTRUCTURE")) {
+            boolean hasAttachment = checkForAttachments(structureResponse);
+            email.setHasAttachment(hasAttachment);
+
+            if (hasAttachment) {
+                String attachmentName = extractAttachmentName(structureResponse);
+                email.setAttachmentName(attachmentName);
+            }
+        } else {
+            throw new IOException("Invalid structure response: " + structureResponse);
         }
 
         // Fetch email body
         String bodyResponse = sendCommandAndReadFullResponse("FETCH " + id + " (BODY[TEXT])");
-        email.setBody(parseBodyResponse(bodyResponse));
- 
+        if (bodyResponse != null && bodyResponse.contains("BODY")) {
+            email.setBody(parseBodyResponse(bodyResponse));
+        } else {
+            throw new IOException("Invalid body response: " + bodyResponse);
+        }
+
         return email;
     }
+
+    
     
     public byte[] downloadAttachment(String emailId, String attachmentName) throws IOException {
         // Fetch the BODYSTRUCTURE to find the part number of the attachment
@@ -203,40 +220,47 @@ public class ImapClient {
     }
 
     private String sendCommandAndReadFullResponse(String command) throws IOException {
-        writer.write(tag + " " + command + "\r\n");
-        writer.flush();
-        System.out.println("Client: " + tag + " " + command);
+     writer.write(tag + " " + command + "\r\n");
+     writer.flush();
+     System.out.println("Client: " + tag + " " + command);
 
-        StringBuilder response = new StringBuilder();
-        String line;
-        int contentLength = -1;
+     StringBuilder response = new StringBuilder();
+     String line;
+     int contentLength = -1;
 
-        while ((line = reader.readLine()) != null) {
-            System.out.println("Server: " + line);
-            response.append(line).append("\r\n");
+     while ((line = reader.readLine()) != null) {
+         System.out.println("Server: " + line);
+         response.append(line).append("\r\n");
 
-            if (line.contains("{")) {
-                int startIndex = line.lastIndexOf("{") + 1;
-                int endIndex = line.lastIndexOf("}");
-                if (startIndex < endIndex) {
-                    contentLength = Integer.parseInt(line.substring(startIndex, endIndex));
-                }
-            }
+         if (line.contains("{")) {
+             int startIndex = line.lastIndexOf("{") + 1;
+             int endIndex = line.lastIndexOf("}");
 
-            if (contentLength > 0) {
-                char[] buffer = new char[contentLength];
-                reader.read(buffer, 0, contentLength);
-                response.append(buffer);
-                contentLength = -1;
-            }
+             if (startIndex < endIndex) {
+                 String lengthString = line.substring(startIndex, endIndex).trim();
+                 try {
+                     contentLength = Integer.parseInt(lengthString);
+                 } catch (NumberFormatException e) {
+                     System.out.println("Lỗi: Đầu vào không phải là một số hợp lệ: " + lengthString);
+                     contentLength = -1; // Đặt lại contentLength để không đọc dữ liệu không hợp lệ
+                 }
+             }
+         }
 
-            if (line.startsWith(tag + " OK") || line.startsWith(tag + " NO") || line.startsWith(tag + " BAD")) {
-                break;
-            }
-        }
-        tag++;
-        return response.toString();
-    }
+         if (contentLength > 0) {
+             char[] buffer = new char[contentLength];
+             reader.read(buffer, 0, contentLength);
+             response.append(buffer);
+             contentLength = -1; // Đặt lại để tránh đọc lại dữ liệu không cần thiết
+         }
+
+         if (line.startsWith(tag + " OK") || line.startsWith(tag + " NO") || line.startsWith(tag + " BAD")) {
+             break;
+         }
+     }
+     tag++;
+     return response.toString();
+ }
 
     private void parseHeaderResponse(String response, Email email) throws IOException {
         String[] lines = response.split("\r\n");
@@ -244,7 +268,16 @@ public class ImapClient {
             if (line.startsWith("Subject: ")) {
                 email.setSubject(decodeSubject(line.substring(9).trim()));
             } else if (line.startsWith("From: ")) {
-                email.setSender(line.substring(6).trim());
+                String fromLine = line.substring(6).trim();
+                // Tìm địa chỉ email giữa dấu <>
+                int start = fromLine.indexOf("<");
+                int end = fromLine.indexOf(">");
+                if (start != -1 && end != -1) {
+                    String emailAddress = fromLine.substring(start + 1, end).trim(); // Lấy địa chỉ email
+                    email.setSender(emailAddress); // Chỉ lưu địa chỉ email
+                } else {
+                    email.setSender(fromLine); // Nếu không có dấu <>, lưu toàn bộ dòng
+                }
             } else if (line.startsWith("To: ")) {
                 email.setRecipient(line.substring(4).trim());
             } else if (line.startsWith("Date: ")) {
@@ -254,27 +287,41 @@ public class ImapClient {
     }
 
     private String parseBodyResponse(String response) {
-    int startIndex = response.indexOf("\r\n\r\n");
-    if (startIndex != -1) {
-        // Extract the body part after the header part
-        String body = response.substring(startIndex + 4).trim();
-        
-        // If the body is multipart, find the first text part
-        int textPartStart = body.indexOf("\r\n--");
-        if (textPartStart != -1) {
-            body = body.substring(0, textPartStart).trim();
-        }
+        int startIndex = response.indexOf("\r\n\r\n");
+        if (startIndex != -1) {
+            // Lấy phần body sau phần header
+            String body = response.substring(startIndex + 4).trim();
 
-        // Remove any MIME headers and trim whitespace
-        int contentStart = body.indexOf("\r\n\r\n");
-        if (contentStart != -1) {
-            body = body.substring(contentStart + 4).trim();
-        }
+            // Nếu body là dạng multipart, lấy phần text đầu tiên
+            int textPartStart = body.indexOf("\r\n--");
+            if (textPartStart != -1) {
+                body = body.substring(0, textPartStart).trim();
+            }
 
-        return body;
+            // Xóa các header MIME và trim whitespace
+            int contentStart = body.indexOf("\r\n\r\n");
+            if (contentStart != -1) {
+                body = body.substring(contentStart + 4).trim();
+            }
+
+            // Giải mã nội dung MIME
+            try {
+                ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body.getBytes("UTF-8"));
+                InputStreamReader inputStreamReader = new InputStreamReader(MimeUtility.decode(byteArrayInputStream, "quoted-printable"), "UTF-8");
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                StringBuilder decodedBody = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    decodedBody.append(line).append("\n");
+                }
+                return decodedBody.toString().trim();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return body; // Nếu xảy ra lỗi, trả về body không giải mã
+            }
+        }
+        return "";
     }
-    return "";
-}
 
     private boolean checkForAttachments(String structureResponse) {
         // Check if the response contains "ATTACHMENT" (case-insensitive)
@@ -345,5 +392,141 @@ public class ImapClient {
             }
         }
         return folders;
+    }
+    
+    public boolean deleteEmail(String emailId) throws IOException {
+        // Đánh dấu email để xóa
+        String response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        if (!response.contains("OK")) {
+            return false; // Không thể đánh dấu để xóa
+        }
+
+        // Xóa các email đã đánh dấu
+        response = sendCommand("EXPUNGE");
+        return response.contains("OK");
+    }
+    
+    public boolean moveToTrash(String emailId) throws IOException {
+        // Tên thư mục thùng rác với mã hóa UTF-7
+        String trashFolder = "[Gmail]/Th&APk-ng r&AOE-c"; 
+
+        // Sao chép email vào thư mục thùng rác
+        String response = sendCommand("COPY " + emailId + " \"" + trashFolder + "\"");
+        System.out.println("COPY response: " + response); // In phản hồi từ lệnh COPY
+        if (!response.contains("OK")) {
+            System.err.println("Failed to copy email to trash.");
+            return false; // Không thể sao chép email vào thùng rác
+        }
+
+        // Đánh dấu email là đã xóa bằng cách thêm cờ \\Deleted
+        response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        System.out.println("STORE response: " + response); // In phản hồi từ lệnh STORE
+        if (!response.contains("OK")) {
+            System.err.println("Failed to mark email as deleted.");
+            return false; // Không thể đánh dấu email là đã xóa
+        }
+
+        // Gọi lệnh EXPUNGE để thực hiện việc xóa email đã đánh dấu
+        response = sendCommand("EXPUNGE");
+        System.out.println("EXPUNGE response: " + response); // In phản hồi từ lệnh EXPUNGE
+        if (!response.contains("OK")) {
+            System.err.println("Failed to expunge deleted email.");
+            return false; // Không thể xóa email đã đánh dấu
+        }
+
+        return true; // Nếu hoàn tất, trả về true
+    }
+
+    // Phương thức di chuyển email vào hộp thư đến
+    public boolean moveToInbox(String emailId) throws IOException {
+        // Đặt tên thư mục đến
+        String inboxFolder = "INBOX"; 
+
+        // Sao chép email vào thư mục đến
+        String response = sendCommand("COPY " + emailId + " \"" + inboxFolder + "\"");
+        System.out.println("COPY response: " + response); // In phản hồi từ lệnh COPY
+        if (!response.contains("OK")) {
+            return false; // Không thể sao chép email
+        }
+
+        // Đánh dấu email để xóa
+        response = sendCommand("STORE " + emailId + " +FLAGS (\\Deleted)");
+        System.out.println("STORE response: " + response); // In phản hồi từ lệnh STORE
+        if (!response.contains("OK")) {
+            return false; // Không thể đánh dấu email
+        }
+
+        // Gọi lệnh EXPUNGE để thực hiện xóa
+        response = sendCommand("EXPUNGE");
+        System.out.println("EXPUNGE response: " + response); // In phản hồi từ lệnh EXPUNGE
+        if (!response.contains("OK")) {
+            return false; // Không thể xóa email
+        }
+
+        return true; // Nếu đã hoàn tất, trả về true
+    }
+    
+    // SEARCH 
+    
+    public List<Email> searchEmails(String searchTerm) throws IOException {
+        List<Email> emails = new ArrayList<>();
+        try {
+            // Chuẩn hóa và loại bỏ dấu khỏi từ khóa tìm kiếm
+            String normalizedSearchTerm = removeDiacritics(normalizeString(searchTerm));
+
+            // Tìm kiếm trong nội dung
+            String command = "SEARCH CHARSET UTF-8 TEXT \"" + normalizedSearchTerm + "\"\r\n";
+            String response = sendCommand(command);
+
+            if (response.contains("* SEARCH")) {
+                String[] lines = response.split("\r\n");
+                for (String line : lines) {
+                    if (line.startsWith("* SEARCH")) {
+                        String[] ids = line.substring(8).trim().split("\\s+");
+                        for (String id : ids) {
+                            if (!id.isEmpty()) {
+                                try {
+                                    Email email = fetchEmailInfo(id);
+                                    // Kiểm tra tiêu đề và nội dung email với cả từ khóa có dấu và không dấu
+                                    if (containsSearchTerms(email.getSubject(), searchTerm) || 
+                                        containsSearchTerms(email.getBody(), searchTerm) || 
+                                        containsSearchTerms(email.getRecipient(), searchTerm) ||
+                                        containsSearchTerms(email.getSender(), searchTerm)) {
+                                        emails.add(email); // Thêm email vào danh sách
+                                    }
+                                } catch (IOException e) {
+                                    System.err.println("Error fetching email with ID " + id + ": " + e.getMessage());
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            } else if (response.startsWith("BAD") || response.startsWith("NO")) {
+                throw new IOException("IMAP SEARCH command failed: " + response);
+            }
+        } catch (IOException e) {
+            System.err.println("Error in searchEmails: " + e.getMessage());
+            throw e;
+        }
+    return emails;
+    }
+    public String normalizeString(String input) {
+        return input.toLowerCase();
+    }
+
+    public boolean containsSearchTerms(String subject, String searchTerms) {
+    // Loại bỏ dấu khỏi tiêu đề và từ khóa tìm kiếm
+    String normalizedSubject = removeDiacritics(normalizeString(subject));
+    String normalizedSearchTerms = removeDiacritics(normalizeString(searchTerms));
+    
+    // Kiểm tra tiêu đề có chứa từ không dấu và từ có dấu
+    return normalizedSubject.contains(normalizedSearchTerms) || subject.contains(searchTerms);
+}
+
+    
+    public String removeDiacritics(String str) {
+        return Normalizer.normalize(str, Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 }

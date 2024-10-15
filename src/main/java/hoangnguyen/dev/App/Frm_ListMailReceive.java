@@ -4,12 +4,29 @@
  */
 package hoangnguyen.dev.App;
 
+import hoangnguyen.dev.Protocol.ImapClient;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author Dell
  */
 public class Frm_ListMailReceive extends javax.swing.JFrame {
 
+    private ImapClient imapClient;
+    private DefaultListModel<String> listModel;
+    private String imapHost;
+    private int imapPort;
+    private String userEmail;
+    private String password;
+    private List<Email> emails;
     /**
      * Creates new form frmHome
      */
@@ -17,6 +34,8 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         initComponents();
     }
 
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -31,14 +50,21 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         listMailReceived = new javax.swing.JList<>();
         jPanel3 = new javax.swing.JPanel();
+        lb_subject = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
+        txt_recipientName = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        txt_sender = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
+        txt_receivingDate = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        txt_attachmentFile = new javax.swing.JTextField();
+        btn_attachment = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         txt_message = new javax.swing.JTextArea();
-        txt_senderName = new javax.swing.JTextField();
-        txt_receivingDate = new javax.swing.JTextField();
-        lb_subject = new javax.swing.JLabel();
+        btnDelete = new javax.swing.JButton();
         txt_search = new javax.swing.JTextField();
+        btn_Search = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         btn_home = new javax.swing.JMenu();
         jmenu_exit = new javax.swing.JMenuItem();
@@ -47,13 +73,18 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jLabel2.setText("Received Mail List");
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel2.setText("RECEIVED MAIL LIST");
 
         listMailReceived.setModel(new javax.swing.AbstractListModel<String>() {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
             public int getSize() { return strings.length; }
             public String getElementAt(int i) { return strings[i]; }
+        });
+        listMailReceived.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                listMailReceivedValueChanged(evt);
+            }
         });
         jScrollPane1.setViewportView(listMailReceived);
 
@@ -66,7 +97,7 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addComponent(jLabel2)
-                        .addGap(0, 83, Short.MAX_VALUE))
+                        .addGap(0, 13, Short.MAX_VALUE))
                     .addComponent(jScrollPane1))
                 .addContainerGap())
         );
@@ -82,16 +113,44 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
 
         jPanel3.setBackground(new java.awt.Color(255, 255, 255));
 
-        jLabel1.setText("Sender name:");
+        lb_subject.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lb_subject.setText("Subject");
+
+        jLabel1.setText("Recipient:");
+
+        txt_recipientName.setEnabled(false);
+
+        jLabel4.setText("Sender:");
+
+        txt_sender.setEnabled(false);
 
         jLabel3.setText("Receiving date:");
 
+        txt_receivingDate.setEnabled(false);
+
+        jLabel5.setText("Attached file:");
+
+        txt_attachmentFile.setText("No attachment");
+        txt_attachmentFile.setEnabled(false);
+
+        btn_attachment.setText("Save As");
+        btn_attachment.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_attachmentActionPerformed(evt);
+            }
+        });
+
         txt_message.setColumns(20);
         txt_message.setRows(5);
+        txt_message.setEnabled(false);
         jScrollPane2.setViewportView(txt_message);
 
-        lb_subject.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        lb_subject.setText("Subject");
+        btnDelete.setText("Delete");
+        btnDelete.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnDeleteActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -101,39 +160,70 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                        .addComponent(jScrollPane2)
-                        .addContainerGap())
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(txt_senderName, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 95, Short.MAX_VALUE)
-                        .addComponent(txt_receivingDate, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())
-                    .addComponent(lb_subject, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(lb_subject, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnDelete))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
                         .addComponent(jLabel3)
-                        .addGap(111, 111, 111))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(txt_receivingDate, javax.swing.GroupLayout.PREFERRED_SIZE, 410, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addComponent(jLabel5)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txt_attachmentFile)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btn_attachment))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(jLabel1)
+                                .addGap(18, 18, 18))
+                            .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addComponent(jLabel4)
+                                .addGap(31, 31, 31)))
+                        .addGap(23, 23, 23)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(txt_sender, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
+                            .addComponent(txt_recipientName))))
+                .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGap(18, 18, 18)
-                .addComponent(lb_subject)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                .addContainerGap()
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lb_subject)
+                    .addComponent(btnDelete))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(jLabel3))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(txt_recipientName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txt_senderName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(txt_sender, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
                     .addComponent(txt_receivingDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 268, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 216, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txt_attachmentFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_attachment)
+                    .addComponent(jLabel5))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        txt_search.setText("Search");
+        btn_Search.setText("Search");
+        btn_Search.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_SearchActionPerformed(evt);
+            }
+        });
 
         btn_home.setText("Home");
         btn_home.addActionListener(new java.awt.event.ActionListener() {
@@ -163,17 +253,21 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(9, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 439, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(155, 155, 155))
+                .addGap(18, 18, 18)
+                .addComponent(btn_Search)
+                .addGap(62, 62, 62))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(8, Short.MAX_VALUE)
-                .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txt_search, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_Search))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -184,16 +278,224 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    
+    public Frm_ListMailReceive(String imapHost, int imapPort, String userEmail, String password) {
+        this.userEmail = userEmail;
+        this.password = password;
+        this.imapHost = imapHost;
+        this.imapPort = imapPort;
+        initComponents();
+        setupImapClient();
+        btn_attachment.setEnabled(false);
+    }
+    
+    private void setupImapClient() {
+        imapClient = new ImapClient();
+        listModel = new DefaultListModel<>(); // Khởi tạo mô hình danh sách
+        listMailReceived.setModel(listModel); // Gán mô hình vào JList
+
+        try {
+            imapClient.connect(imapHost, imapPort); // Kết nối với server IMAP
+            if (imapClient.login(userEmail, password)) {
+                List<String> folders = imapClient.listFolders(); // Lấy danh sách thư mục
+                for (String folder : folders) {
+                    System.out.println(folder); // In ra danh sách thư mục
+                }
+
+                // Chọn thư mục "INBOX"
+                if (imapClient.selectFolder("INBOX")) { // Chọn "INBOX" thay vì "[Gmail]/INBOX"
+                    emails = imapClient.listEmails(); // Lấy danh sách email
+                    for (Email email : emails) {
+                        listModel.addElement(email.getSubject()); // Thêm tiêu đề email vào mô hình
+                    }
+                } else {
+                    System.out.println("Failed to select folder");
+                }
+            } else {
+                System.out.println("Login failed");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace(); // Xử lý lỗi
+        }
+    }
+
+    
+    private void displayEmailDetails(int index){
+        Email email = emails.get(index);
+        lb_subject.setText(email.getSubject());
+        txt_sender.setText(email.getSender());
+        txt_receivingDate.setText(email.getDate());
+        txt_recipientName.setText(email.getRecipient());
+        txt_message.setText(email.getBody());
+//        txt_attachment.setText(email.isHasAttachment() ? "Có tệp đính kèm" : "Không có tệp đính kèm");
+        if(email.isHasAttachment()){
+            txt_attachmentFile.setText(email.getAttachmentName());
+            btn_attachment.setEnabled(true);
+        }
+        else{
+            txt_attachmentFile.setText("No attachment");
+            btn_attachment.setEnabled(false);
+                    
+        }
+    }
     private void btn_homeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_homeActionPerformed
         
     }//GEN-LAST:event_btn_homeActionPerformed
 
     private void jmenu_exitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmenu_exitActionPerformed
-        Frm_Home frm_Home = new Frm_Home();
+        Frm_Home frm_Home = new Frm_Home(userEmail,password);
         frm_Home.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_jmenu_exitActionPerformed
 
+    private void btn_attachmentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_attachmentActionPerformed
+            int selectedIndex = listMailReceived.getSelectedIndex();
+        if(selectedIndex != -1){
+            Email email = emails.get(selectedIndex);
+            if(email.isHasAttachment()){
+                try{
+                    byte[] attachmentData = imapClient.downloadAttachment(email.getId(), email.getAttachmentName());
+                    saveAndOpenAttachment(attachmentData, email.getAttachmentName());
+                }
+                    catch(IOException ex){
+                    JOptionPane.showMessageDialog(this, "Error downloading attachment: " + ex.getMessage(), "Download Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }//GEN-LAST:event_btn_attachmentActionPerformed
+    private void saveAndOpenAttachment(byte[] attachmentData, String fileName) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Attachment");
+        fileChooser.setSelectedFile(new File(fileName)); // Đặt tên file mặc định
+    
+        // Hiển thị hộp thoại lưu file
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
+                fos.write(attachmentData);
+                // Mở file sau khi lưu
+                Desktop.getDesktop().open(fileToSave);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error saving or opening attachment: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    private void listMailReceivedValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_listMailReceivedValueChanged
+        if(!evt.getValueIsAdjusting()){
+            int selectedIndex = listMailReceived.getSelectedIndex();
+            if(selectedIndex != -1){
+                displayEmailDetails(selectedIndex);
+            }
+        }
+    }//GEN-LAST:event_listMailReceivedValueChanged
+
+    private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
+
+    int selectedIndex = listMailReceived.getSelectedIndex();
+    if (selectedIndex != -1) {
+        Email emailToDelete = emails.get(selectedIndex);
+        try {
+            boolean success = imapClient.moveToTrash(emailToDelete.getId());
+
+            if (success) {
+                // Update the display: Remove the email from the listModel and emails list
+                listModel.remove(selectedIndex);
+                emails.remove(selectedIndex);
+
+                // Clear the details of the deleted email
+                lb_subject.setText(""); 
+                txt_recipientName.setText("");
+                txt_receivingDate.setText("");
+                txt_sender.setText("");
+                txt_message.setText("");
+                txt_attachmentFile.setText("");
+                
+                // Show a success message
+                JOptionPane.showMessageDialog(this, "Email has been successfully moved to trash!");
+            } else {
+                // Show an error message if the email could not be moved to trash
+                JOptionPane.showMessageDialog(this, "Failed to move email to trash.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            // Show an error message if an exception occurs
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "An error occurred while moving the email to trash: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    } else {
+        // Show a warning message if no email is selected
+        JOptionPane.showMessageDialog(this, "No email selected.", "Warning", JOptionPane.WARNING_MESSAGE);
+    }
+    }//GEN-LAST:event_btnDeleteActionPerformed
+
+    private void btn_SearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_SearchActionPerformed
+        String searchTerm = txt_search.getText().trim();
+            if (!searchTerm.isEmpty()) {
+                listModel.clear(); // Xóa danh sách hiện tại
+                try {
+                    // Kiểm tra xem từ khóa có chứa '@' không
+                    if (searchTerm.contains("@")) {
+                        // Chỉ lấy phần trước '@'
+                        searchTerm = searchTerm.substring(0, searchTerm.indexOf("@"));
+                    }
+
+                    // Sử dụng từ không dấu để tìm kiếm
+                    String normalizedSearchTerm = imapClient.removeDiacritics(imapClient.normalizeString(searchTerm));
+                    List<Email> searchResults = imapClient.searchEmails(normalizedSearchTerm); // Gọi phương thức tìm kiếm mới
+                    emails = searchResults; // Cập nhật danh sách email hiển thị
+
+                    if (emails.isEmpty()) {
+                        javax.swing.JOptionPane.showMessageDialog(this, "Không tìm thấy email nào với từ khóa: " + searchTerm);
+                    } else {
+                        // Thêm tiêu đề email vào danh sách hiển thị nếu có chứa từ khóa (có dấu và không dấu)
+                        for (Email email : emails) {
+                            String subject = email.getSubject();
+                            String body = email.getBody();
+                            String recipient = email.getRecipient();
+                            String sender = email.getSender();
+
+                            // Kiểm tra cả tiêu đề, nội dung và người gửi
+                            if (imapClient.containsSearchTerms(subject, searchTerm) || 
+                                imapClient.containsSearchTerms(body, searchTerm) || 
+                                imapClient.containsSearchTerms(recipient, searchTerm) || 
+                                imapClient.containsSearchTerms(subject, normalizedSearchTerm) || 
+                                imapClient.containsSearchTerms(body, normalizedSearchTerm) || 
+                                imapClient.containsSearchTerms(recipient, normalizedSearchTerm) ||
+                                imapClient.containsSearchTerms(sender, searchTerm) ||     
+                                imapClient.containsSearchTerms(sender, normalizedSearchTerm)) {
+                                listModel.addElement(subject);
+                            }
+                        }
+
+                        if (listModel.isEmpty()) {
+                            javax.swing.JOptionPane.showMessageDialog(this, "Không tìm thấy email nào với từ khóa chính xác: " + searchTerm);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(this, "Lỗi khi tìm kiếm email: " + e.getMessage());
+                }
+            } else {
+                // Hiển thị thông báo khi không nhập từ khóa
+                javax.swing.JOptionPane.showMessageDialog(this, "Vui lòng nhập từ khóa tìm kiếm.");
+                // Tải lại danh sách email đã gửi
+                loadSentEmails();
+            }
+    }//GEN-LAST:event_btn_SearchActionPerformed
+    private void loadSentEmails() {
+        listModel.clear(); // Xóa danh sách hiện tại
+
+        try {
+            emails = imapClient.listEmails(); // Lấy lại danh sách email
+            // Thêm tiêu đề vào danh sách hiển thị
+            for (Email email : emails) {
+                listModel.addElement(email.getSubject());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace(); // Xử lý ngoại lệ nếu có lỗi xảy ra
+            javax.swing.JOptionPane.showMessageDialog(this, "Lỗi khi tải danh sách email: " + ex.getMessage());
+        }
+    }
     /**
      * @param args the command line arguments
      */
@@ -203,22 +505,22 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
+//        try {
+//            for (javax.swing.UIManager.LookAndFeeltxt_recipientNamevax.swing.UIManager.getInstalledLookAndFeels()) {
+//                if ("Nimbus".equals(info.getName())) {
+//                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+//                    break;
+//                }
+//            }
+//        } catch (ClassNotFoundException ex) {
+//            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (InstantiationException ex) {
+//            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (IllegalAccessException ex) {
+//            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+//            java.util.logging.Logger.getLogger(Frm_ListMailReceive.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//        }
         //</editor-fold>
         //</editor-fold>
         //</editor-fold>
@@ -245,10 +547,15 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnDelete;
+    private javax.swing.JButton btn_Search;
+    private javax.swing.JButton btn_attachment;
     private javax.swing.JMenu btn_home;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -257,9 +564,11 @@ public class Frm_ListMailReceive extends javax.swing.JFrame {
     private javax.swing.JMenuItem jmenu_exit;
     private javax.swing.JLabel lb_subject;
     private javax.swing.JList<String> listMailReceived;
+    private javax.swing.JTextField txt_attachmentFile;
     private javax.swing.JTextArea txt_message;
     private javax.swing.JTextField txt_receivingDate;
+    private javax.swing.JTextField txt_recipientName;
     private javax.swing.JTextField txt_search;
-    private javax.swing.JTextField txt_senderName;
+    private javax.swing.JTextField txt_sender;
     // End of variables declaration//GEN-END:variables
 }
